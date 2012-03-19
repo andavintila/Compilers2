@@ -1,0 +1,75 @@
+Vintila Alexandra 342 C3 
+Tema de casă 3 - Generare de cod
+
+Modalitatea de rulare:
+- java -cp :/usr/local/sbin/antlrworks-1.4.jar:java-cup-11a.runtime.jar:bin Cgen < in.ast
+- "in.ast" reprezinta fisierul de intrare (arborele ast)
+- cu iesirea la stdout.
+
+Formatul fisierelor de test:
+- arborele ast generat la etapa de analiza semantica
+
+Rolul fiecarui fisier sursa (fisierele sursa modificate de mine):
+
+- CgenClassTable.java:
+
+	- in acest fisier am realizat generarea de cod
+
+	- am realizat parcurgeri si prelucrari ale claselor din arborele furnizat in CgenClasTable
+de obicei pornind de la copil catre parinte pentru calcularea offseturilor, dar si de la parinte 
+catre clasele copil, cum am facut in cazul calcularii classtagului
+
+	- prelucrarile pe arborele de clase se repeta in unele situatii pentru ca este nevoie
+de offseturile metodelor si ale atributelor inainte de generarea portiunii de date
+
+	- am folosit hashtable-uri pentru a retine tabelele cu metode
+	- am folosit tabelele de simboli oferite de SymbolTable pentru a memora simboluri temporare
+in metode sau in structuri de tip let si a retine registrele in care acestea sunt memorate
+	
+- cool-tree.java:
+
+	- am facut mici modificari acestui fisier
+
+	- am adaugat atributele reg si offset clasei attr pentru a retine mai usor offsetul si registrul fiecarui atribut (nu se putea proceda la fel si cu metodele pentru ca aceastea pot fi redefinite in clase copil)
+
+- CgenNode.java:
+	- am adaugat atributul classtag pentru a retine classtagul clasei respective si a-l folosi ulterior
+	
+
+Bonus : am implemenatat boxing si unboxing
+
+-dificultati intampinate:
+
+	-pentru ca am inceput prin a genera codul direct, incluzand boxing si unboxing, in etapa de
+debugging a fost mai dificila depistarea erorilor
+
+Exemplu de cod generat pentru o constructie cool:
+
+class Bazz inherits IO {
+	h : Int <- 1;
+	printh() : Int { { out_int(h); 0; } };
+};
+
+.function "Bazz.printh", 1, 1
+Bazz.printh:
+	VR0	<-	VI0
+	## begin dispatch
+	VR1	<-	VR0
+	jumpt	VR1 dispatch_notvoid12
+	VR2	<-	str_const0
+	VR3	<-	48
+	call void_disp_handler ( VR2 VR3 )
+dispatch_notvoid12:
+	load	VR2 [VR0, 12]
+	## boxing 
+	VR3	<-	Int_protObj
+	( VR3 )	<-	call Object.copy ( VR3 )
+	store	VR2 [VR3, 12]
+	VR2	<-	VR3
+	load	VR3 [VR1, 8]
+	load	VR3 [VR3, 16]
+	( VR1 )	<-	call VR3 ( VR1 VR2 )
+	VR1	<-	0
+	return VR1
+.end
+	
